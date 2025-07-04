@@ -1,13 +1,16 @@
+using Portfolio.Infrastructure.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer(); // enables Swagger
-builder.Services.AddSwaggerGen();           // enables Swagger
 
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer(); 
+builder.Services.AddSwaggerGen(); 
+builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
-// Enable Swagger UI in development
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -18,8 +21,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthorization();
-app.MapControllers(); // maps AboutController
+app.MapControllers(); 
 app.MapGet("/", context =>
 {
     context.Response.Redirect("/swagger");
