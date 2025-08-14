@@ -12,7 +12,7 @@ namespace Portfolio.Application.Validators
                 .Matches(@"^\+?[0-9\s\-]{7,15}$").WithMessage("Phone number is invalid.");
 
             RuleFor(x => x.LogoImage)
-     .NotNull().WithMessage("Logo image is required.");
+                .NotNull().WithMessage("Logo image is required.");
 
             RuleFor(x => x.LogoImage)
                 .Must(f => f.Length > 0)

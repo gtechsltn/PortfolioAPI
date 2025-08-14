@@ -5,9 +5,7 @@ using Portfolio.Domain.Entities;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
-
-
-namespace Portfolio.Infrastructure.Services
+namespace Portfolio.Infrastructure.Service
 {
     public class HeaderService : IHeaderService
     {
@@ -32,56 +30,69 @@ namespace Portfolio.Infrastructure.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task AddHeaderAsync(HeaderCreateDto dto)
+        #region add header
+        public async Task<HeaderViewDto> AddOrUpdateHeaderAsync(HeaderCreateDto dto)
         {
             var existingHeader = (await _unitOfWork.HeaderRepository.GetAllAsync()).FirstOrDefault();
             var dbPath = await _fileStorageService.SaveOrReplaceAsync(dto.LogoImage, HeaderFolder);
 
+            Header header;
+
             if (existingHeader != null)
             {
-                existingHeader.SetPhoneNumber(dto.PhoneNumber);
-                existingHeader.SetLogoPath(dbPath);
-                _unitOfWork.HeaderRepository.Update(existingHeader);
+                existingHeader.Update(
+                    phoneNumber: dto.PhoneNumber,
+                    logoPath: dbPath);
+                await _unitOfWork.HeaderRepository.UpdateAsync(existingHeader);
+                header = existingHeader;
             }
             else
             {
-                var mapp = _mapper.Map<Header>(dto);
-                var header = Header.Create(mapp.PhoneNumber, dbPath);
+                
+                header = Header.Create(
+                    phoneNumber: dto.PhoneNumber, 
+                    logoPath: dbPath);
+
                 await _unitOfWork.HeaderRepository.AddAsync(header);
             }
 
             await _unitOfWork.SaveChangesAsync();
+            return _mapper.Map<HeaderViewDto>(header);
         }
+        #endregion
 
-
+        #region get header
         public async Task<HeaderViewDto?> GetHeaderAsync()
         {
             var header = (await _unitOfWork.HeaderRepository.GetAllAsync()).FirstOrDefault();
             if (header == null) return null;
 
-            var fileName = GetSingleImageFromFolder(HeaderFolder);
-            var fullImageUrl = fileName != null ? $"{GetBaseUrl()}/{HeaderFolder}/{fileName}" : null;
+            var headerDto = _mapper.Map<HeaderViewDto>(header);
 
-            return new HeaderViewDto
-            {
-                PhoneNumber = header.PhoneNumber,
-                LogoPath = fullImageUrl
-            };
+            var fileName = GetFileFromFolder(HeaderFolder);
+            headerDto.LogoPath = fileName != null ? $"{GetBaseUrl()}/{HeaderFolder}/{fileName}" : null;
+
+            return headerDto;
         }
+        #endregion
 
+        #region get base url
         private string GetBaseUrl()
         {
             var request = _httpContextAccessor.HttpContext.Request;
             return $"{request.Scheme}://{request.Host}";
         }
+        #endregion
 
-        private string? GetSingleImageFromFolder(string folderName)
+        #region get image from server side folder
+        private string? GetFileFromFolder(string folderName)
         {
             var folderPath = Path.Combine(_env.WebRootPath, folderName);
             return Directory.Exists(folderPath)
                 ? Directory.GetFiles(folderPath).Select(Path.GetFileName).FirstOrDefault()
                 : null;
         }
+        #endregion
     }
 
 }

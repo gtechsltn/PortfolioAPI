@@ -15,11 +15,11 @@ namespace Portfolio.API.Controllers
             _headerService = headerService;
         }
 
-        [HttpPost]
+        [HttpPost("addorupdate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AddHeader([FromForm] HeaderCreateDto dto)
+        public async Task<IActionResult> AddOrUpdateHeader([FromForm] HeaderCreateDto dto)
         {
             if(!ModelState.IsValid)
             {
@@ -27,8 +27,8 @@ namespace Portfolio.API.Controllers
             }
             try
             {
-                await _headerService.AddHeaderAsync(dto);
-                return Ok(new { Message = "Header added successfully." });
+                var header = await _headerService.AddOrUpdateHeaderAsync(dto);
+                return Ok(header);
             }
             catch (Exception ex)
             {
@@ -37,7 +37,7 @@ namespace Portfolio.API.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("get")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

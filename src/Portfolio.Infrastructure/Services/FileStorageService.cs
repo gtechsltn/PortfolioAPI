@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Portfolio.Application.Interfaces;
 
-namespace Portfolio.Infrastructure.Services
+namespace Portfolio.Infrastructure.Service
 {
     public class FileStorageService : IFileStorageService
     {
@@ -13,6 +13,7 @@ namespace Portfolio.Infrastructure.Services
             _env = env;
         }
 
+        #region save or replace file
         public async Task<string> SaveOrReplaceAsync(IFormFile file, string folderName)
         {
             var folderPath = Path.Combine(_env.WebRootPath, folderName);
@@ -36,7 +37,53 @@ namespace Portfolio.Infrastructure.Services
             var dbFileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
             return Path.Combine("/", folderName, dbFileName).Replace("\\", "/");
         }
+        #endregion
 
+        #region save file
+        public async Task<string> SaveFileAsync(IFormFile file, string folderName, string fileName)
+        {
+            var folderPath = Path.Combine(_env.WebRootPath, folderName);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
 
+            var fullPath = Path.Combine(folderPath, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativePath = Path.Combine("/", folderName, fileName).Replace("\\", "/");
+            return relativePath;
+        }
+        #endregion
+
+        #region generate file path for saving
+        public Task<string> GenerateFilePath(string folderName, string originalFileName)
+        {
+            if (string.IsNullOrWhiteSpace(originalFileName))
+                throw new ArgumentException("Original file name is required.");
+
+            var extension = Path.GetExtension(originalFileName);
+            var fileName = Guid.NewGuid().ToString() + extension;
+            var relativePath = Path.Combine("/", folderName, fileName).Replace("\\", "/");
+
+            return Task.FromResult(relativePath);
+        }
+        #endregion
+
+        #region delete file
+        public async Task DeleteFileAsync(string folderName, string fileName)
+        {
+            var folderPath = Path.Combine(_env.WebRootPath, folderName);
+            var fullPath = Path.Combine(folderPath, fileName);
+
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+            await Task.CompletedTask;
+        }
+        #endregion
     }
 }

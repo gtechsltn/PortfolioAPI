@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using NPOI.SS.Formula.Functions;
 using Portfolio.Application.Interfaces;
 using Portfolio.Persistence.Context;
@@ -31,8 +32,16 @@ namespace Portfolio.Persistence.Repositories
 
         public async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
 
-        public void Update(T entity) => _dbSet.Update(entity);
+        public async Task UpdateAsync(T entity)
+        {
+            await Task.Run(() => _dbSet.Update(entity));
+        }
 
-        public void Delete(T entity) => _dbSet.Remove(entity);
+        public async Task DeleteAsync(T entity)
+        {
+            await Task.Run(() => _dbSet.Remove(entity));
+        }
+
+       
     }
 }
